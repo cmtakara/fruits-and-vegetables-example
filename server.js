@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const jsxViewEngine = require('jsx-view-engine');
 const methodOverride = require('method-override');
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 // replaced when we replaced the array of fruit with the mongoDb model
@@ -300,6 +301,6 @@ app.get('/vegetables/:id', async (req, res) => {
     // });
 })
 
-app.listen(3001, () => {
+app.listen(PORT, () => {
     console.log('listening');
 });
