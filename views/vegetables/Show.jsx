@@ -1,14 +1,21 @@
 const React = require('react');
+const DefaultLayout = require('../layout/Default');
+
 class Show extends React.Component {
-    render () {
+    render() {
         const vegetable = this.props.vegetable;
 
         return (
-            <div>
-                <h1>Show Page</h1>
+            <DefaultLayout title="Show an Individual Vegetable">
                 <p>The {vegetable.name} is {vegetable.color}</p>
                 {vegetable.readyToEat ? 'It is ready to eat' : "NOT READY!"}
-            </div>
+                <br />
+                <a href={`/vegetables/${vegetable._id}/edit`}>Edit This Vegetable</a>
+                <form action={`/vegetables/${vegetable._id}?_method=DELETE`} method="POST">
+                    <input type="submit" value="DELETE" />
+                </form>
+                <a href="/vegetables">Back to Index</a>
+            </DefaultLayout>
 
         )
     }

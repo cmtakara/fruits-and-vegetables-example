@@ -1,13 +1,16 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const jsxViewEngine = require('jsx-view-engine');
+const methodOverride = require('method-override');
+
 const app = express();
 // replaced when we replaced the array of fruit with the mongoDb model
 // const fruits = require('./models/fruits.js');
 const Fruit = require('./models/fruits.js');
 // const vegetables = require('./models/vegetables.js');
 const Vegetable = require('./models/vegetables.js');
-const jsxViewEngine = require('jsx-view-engine');
+
 
 // Global configuration
 const mongoURI = process.env.MONGO_URI;
@@ -46,12 +49,14 @@ app.engine('jsx', jsxViewEngine());
 // ================ Middleware ================
 //
 app.use((req, res, next) => {
-    console.log('Middleware: I run for all routes');
+    // console.log('Middleware: I run for all routes');
     next();
 })
 
 //near the top, around other app.use() calls
 app.use(express.urlencoded({extended:false}));
+
+app.use(methodOverride('_method'));
 
 // These are my routes
 // We are going to create the 7 RESTful routes
@@ -71,6 +76,32 @@ app.get('/', (req, res) => {
         '<div>this is my fruits AND VEGETABLES root route<br/><a href="/fruits">fruits</a><br/><a href="/vegetables">vegetables</a></div>'
         );
 });
+
+// demonstrating seed route - you can also add one for vegetables
+// app.get('/fruits/seed', async (req, res)=>{
+//     try {
+//     await Fruit.create([
+//         {
+//             name:'grapefruit',
+//             color:'pink',
+//             readyToEat:true
+//         },
+//         {
+//             name:'grape',
+//             color:'purple',
+//             readyToEat:false
+//         },
+//         {
+//             name:'avocado',
+//             color:'green',
+//             readyToEat:true
+//         }
+//     ])
+//     res.status(200).redirect('/fruits'); 
+//     } catch (err) {
+//         res.status(400).send(err);
+//     }
+// });
 
 // I - INDEX - dsiplays a list of all fruits
 app.get('/fruits/', async (req, res) => {
@@ -105,6 +136,71 @@ app.get('/fruits/new', (req, res) => {
 // N - NEW - allows a user to input a new vegetable
 app.get('/vegetables/new', (req, res) => {
     res.render('vegetables/New');
+});
+
+// D - DELETE - allows a user to permanently remove and item from the database
+app.delete('/fruits/:id', async (req, res) => {
+    // res.send('deleting...');
+    try {
+        const deletedFruit = await Fruit.findByIdAndDelete(req.params.id);
+        console.log(deletedFruit);
+            res.status(200).redirect('/fruits');
+        } catch (err) {
+        res.status(400).send(err);
+    }
+});
+
+// D - DELETE - allows a user to permanently remove and item from the database
+app.delete('/vegetables/:id', async (req, res) => {
+    // res.send('deleting...');
+    try {
+        const deletedVegetable = await Vegetable.findByIdAndDelete(req.params.id);
+        console.log(deletedVegetable);
+            res.status(200).redirect('/vegetables');
+        } catch (err) {
+        res.status(400).send(err);
+    }
+});
+
+
+// U - UPDATE - allows a user to update a database entry using inputs from EDIT form
+app.put('/fruits/:id', async (req, res)=>{
+    if(req.body.readyToEat === 'on'){
+        req.body.readyToEat = true;
+    } else {
+        req.body.readyToEat = false;
+    }
+    try {
+        const updatedFruit = await Fruit.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true },
+        );
+        console.log(updatedFruit);
+        res.redirect(`/fruits/${req.params.id}`);
+    } catch (err) {
+        res.status(400).send(err);
+    }
+});
+
+// U - UPDATE - allows a user to update a database entry using inputs from EDIT form
+app.put('/vegetables/:id', async (req, res)=>{
+    if(req.body.readyToEat === 'on'){
+        req.body.readyToEat = true;
+    } else {
+        req.body.readyToEat = false;
+    }
+    try {
+        const updatedVegetable = await Vegetable.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true },
+        );
+        console.log(updatedVegetable);
+        res.redirect(`/vegetables/${req.params.id}`);
+    } catch (err) {
+        res.status(400).send(err);
+    }
 });
 
 
@@ -154,6 +250,25 @@ app.post('/vegetables', async (req, res) => {
     // res.redirect('/vegetables'); // send user back to /fruits
 })
 
+// E - EDIT - update an existing entry in the database
+app.get('/fruits/:id/edit', async (req, res)=>{
+    try {
+        const foundFruit = await Fruit.findById(req.params.id);
+        res.status(200).render('fruits/Edit', { fruit: foundFruit});
+    } catch (err) {
+        res.status(400).send(err);
+    }
+});
+
+// E - EDIT - update an existing entry in the database
+app.get('/vegetables/:id/edit', async (req, res)=>{
+    try {
+        const foundVegetable = await Vegetable.findById(req.params.id);
+        res.status(200).render('vegetables/Edit', { vegetable: foundVegetable});
+    } catch (err) {
+        res.status(400).send(err);
+    }
+});
 
 // S - SHOW - show route displays details of an individual fruit
 app.get('/fruits/:id', async (req, res) => {
@@ -174,7 +289,7 @@ app.get('/fruits/:id', async (req, res) => {
 // S - SHOW - show route displays details of an individual vegetable
 app.get('/vegetables/:id', async (req, res) => {
     try {
-        console.log(req.params.id);
+        // console.log(req.params.id);
         const foundVegetable = await Vegetable.findById(req.params.id);
         res.render('vegetables/Show', {vegetable: foundVegetable});
     } catch (err) {
